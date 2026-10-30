@@ -274,3 +274,58 @@ def impute_known(X_nan, mu, Sigma):
 
     return X_mean, X_var
 
+# Step 8 - multiple_impute
+def multiple_impute(X_nan, mu, Sigma, m, rng):
+    """Return m posterior draws of the completed matrix, shape (m, N, D);
+    hidden blocks are sampled jointly.
+    """
+
+    # Convert inputs to NumPy arrays.
+    X_nan = np.asarray(X_nan, dtype=float)
+    mu = np.asarray(mu, dtype=float)
+    Sigma = np.asarray(Sigma, dtype=float)
+
+    # Get the number of observations and dimensions.
+    N, D = X_nan.shape
+
+    # Initialize m copies of the original data matrix.
+    # Observed entries remain unchanged in every draw.
+    completed = np.broadcast_to(X_nan, (m, N, D)).copy()
+
+    # Process each observation independently.
+    for n in range(N):
+
+        # Identify hidden and observed coordinates.
+        idx_hid = np.flatnonzero(np.isnan(X_nan[n]))
+        idx_obs = np.flatnonzero(~np.isnan(X_nan[n]))
+
+        # Skip rows with no missing entries.
+        if len(idx_hid) == 0:
+            continue
+
+        # Get the observed values.
+        y_obs = X_nan[n, idx_obs]
+
+        # Compute the conditional Gaussian distribution.
+        cond_idx, mu_cond, Sigma_cond = condition_gaussian(
+            mu, Sigma, idx_obs, y_obs
+        )
+
+        # Add a small diagonal jitter for numerical stability.
+        H = len(cond_idx)
+        Sigma_stable = Sigma_cond + 1e-10 * np.eye(H)
+
+        # Compute the Cholesky factor of the conditional covariance.
+        L = np.linalg.cholesky(Sigma_stable)
+
+        # Draw all m standard normal samples in one call.
+        E = rng.standard_normal((m, H))
+
+        # Generate joint samples from the conditional Gaussian.
+        samples = mu_cond + E @ L.T
+
+        # Fill the missing coordinates in all m completed datasets.
+        completed[:, n, cond_idx] = samples
+
+    return completed
+
