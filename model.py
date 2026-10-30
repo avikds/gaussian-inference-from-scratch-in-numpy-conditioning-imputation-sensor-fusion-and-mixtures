@@ -508,3 +508,54 @@ def lgs_joint(mu_z, Sigma_z, W, b, Sigma_y):
 
     return mu, Sigma
 
+# Step 13 - lgs_posterior
+def lgs_posterior(mu_z, Sigma_z, W, b, Sigma_y, y):
+    """Return (mu_post, Sigma_post) of p(z | y)
+    by Bayes rule for Gaussians (eq 3.37).
+    """
+
+    # Convert inputs to NumPy arrays.
+    mu_z = np.asarray(mu_z, dtype=float)
+    Sigma_z = np.asarray(Sigma_z, dtype=float)
+    W = np.asarray(W, dtype=float)
+    b = np.asarray(b, dtype=float)
+    Sigma_y = np.asarray(Sigma_y, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    # Get the dimensionality of the latent variable.
+    L = len(mu_z)
+
+    # Compute the prior precision matrix.
+    Lambda_z = np.linalg.solve(Sigma_z, np.eye(L))
+
+    # Compute the observation noise precision matrix.
+    D = len(y)
+    Lambda_y = np.linalg.solve(Sigma_y, np.eye(D))
+
+    # Compute the posterior precision matrix:
+    # Lambda_post = inv(Sigma_z) + W.T @ inv(Sigma_y) @ W
+    Lambda_post = Lambda_z + W.T @ Lambda_y @ W
+
+    # Compute the posterior covariance by solving the
+    # linear system instead of explicitly inverting Lambda_post.
+    Sigma_post = np.linalg.solve(
+        Lambda_post,
+        np.eye(L)
+    )
+
+    # Compute the information-weighted posterior mean:
+    # eta_post = inv(Sigma_y) @ (y - b) transformed by W.T,
+    # plus the prior information Lambda_z @ mu_z.
+    eta_post = (
+        W.T @ Lambda_y @ (y - b)
+        + Lambda_z @ mu_z
+    )
+
+    # Solve for the posterior mean.
+    mu_post = np.linalg.solve(Lambda_post, eta_post)
+
+    # Symmetrize the posterior covariance.
+    Sigma_post = 0.5 * (Sigma_post + Sigma_post.T)
+
+    return mu_post, Sigma_post
+

@@ -22,6 +22,7 @@ python scaffold.py
 - [x] **10.** fit_mvn
 - [x] **11.** compare_imputers
 - [x] **12.** lgs_joint
+- [x] **13.** lgs_posterior
 
 ---
 
