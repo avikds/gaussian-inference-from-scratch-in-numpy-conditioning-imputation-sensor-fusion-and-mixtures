@@ -180,3 +180,52 @@ def condition_gaussian(mu, Sigma, idx_obs, y_obs):
 
     return idx_hid, mu_cond, Sigma_cond
 
+# Step 6 - condition_gaussian_precision
+def condition_gaussian_precision(mu, Sigma, idx_obs, y_obs):
+    """Return (idx_hid, mu_cond, Sigma_cond) for
+    p(y_hid | y_obs) using the precision matrix Lambda = Sigma^-1.
+    """
+
+    # Convert inputs to NumPy arrays.
+    mu = np.asarray(mu, dtype=float)
+    Sigma = np.asarray(Sigma, dtype=float)
+    idx_obs = np.asarray(idx_obs, dtype=int).reshape(-1)
+    y_obs = np.asarray(y_obs, dtype=float).reshape(-1)
+
+    # Get the total number of dimensions.
+    D = len(mu)
+
+    # Identify hidden coordinates in ascending order.
+    idx_hid = np.setdiff1d(np.arange(D), idx_obs)
+
+    # Compute the precision matrix.
+    # Lambda = Sigma^-1
+    Lam = np.linalg.inv(Sigma)
+
+    # Extract the required precision matrix blocks.
+    Lam_11 = Lam[np.ix_(idx_hid, idx_hid)]
+    Lam_12 = Lam[np.ix_(idx_hid, idx_obs)]
+
+    # Extract the means of the hidden and observed coordinates.
+    mu_hid = mu[idx_hid]
+    mu_obs = mu[idx_obs]
+
+    # Compute the observed residuals.
+    residual = y_obs - mu_obs
+
+    # Compute the conditional covariance:
+    # Sigma_cond = inv(Lambda_11)
+    Sigma_cond = np.linalg.solve(
+        Lam_11,
+        np.eye(len(idx_hid))
+    )
+
+    # Compute the conditional mean:
+    # mu_cond = mu_hid - Sigma_cond @ Lam_12 @ residual
+    mu_cond = mu_hid - Sigma_cond @ Lam_12 @ residual
+
+    # Symmetrize the conditional covariance.
+    Sigma_cond = 0.5 * (Sigma_cond + Sigma_cond.T)
+
+    return idx_hid, mu_cond, Sigma_cond
+
