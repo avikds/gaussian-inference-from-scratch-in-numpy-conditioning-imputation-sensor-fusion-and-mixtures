@@ -403,3 +403,66 @@ def fit_mvn(X, ridge=0.0):
 
     return mu, Sigma
 
+# Step 11 - compare_imputers
+def compare_imputers(X_train, X_true, X_nan, ridge=1e-3):
+    """Return {"column": scores, "mvn": scores} for the column-mean
+    baseline and the conditional MVN imputer.
+    """
+
+    # Convert inputs to NumPy arrays.
+    X_train = np.asarray(X_train, dtype=float)
+    X_true = np.asarray(X_true, dtype=float)
+    X_nan = np.asarray(X_nan, dtype=float)
+
+    # Fit a multivariate Gaussian to the complete training data.
+    mu, Sigma = fit_mvn(X_train, ridge=ridge)
+
+    # Identify missing entries.
+    mask = np.isnan(X_nan)
+
+    # --------------------------------------------------
+    # 1. Column-mean baseline imputer
+    # --------------------------------------------------
+
+    # Fill missing entries using the corresponding column mean.
+    # Preserve all observed entries.
+    X_mean_column = np.where(mask, mu, X_nan)
+
+    # Assign the marginal variance of each column to missing entries.
+    # Observed entries receive zero variance.
+    X_var_column = np.where(mask, np.diag(Sigma), 0.0)
+
+    # Evaluate the column-mean imputer.
+    column_scores = imputation_scores(
+        X_true,
+        X_nan,
+        X_mean_column,
+        X_var_column
+    )
+
+    # --------------------------------------------------
+    # 2. Conditional MVN imputer
+    # --------------------------------------------------
+
+    # Impute missing entries using conditional Gaussian means
+    # and their corresponding posterior variances.
+    X_mean_mvn, X_var_mvn = impute_known(
+        X_nan,
+        mu,
+        Sigma
+    )
+
+    # Evaluate the conditional MVN imputer.
+    mvn_scores = imputation_scores(
+        X_true,
+        X_nan,
+        X_mean_mvn,
+        X_var_mvn
+    )
+
+    # Return the scores for both imputers.
+    return {
+        "column": column_scores,
+        "mvn": mvn_scores
+    }
+
