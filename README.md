@@ -25,6 +25,7 @@ python scaffold.py
 - [x] **13.** lgs_posterior
 - [x] **14.** lgs_log_evidence
 - [x] **15.** infer_scalar
+- [x] **16.** infer_vector
 
 ---
 

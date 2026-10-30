@@ -634,3 +634,47 @@ def infer_scalar(ys, sigma2, mu0, tau0_sq):
     # Return posterior mean and variance as Python floats.
     return float(mu_post[0]), float(Sigma_post[0, 0])
 
+# Step 16 - infer_vector
+def infer_vector(Y, Sigma_y, mu_z, Sigma_z):
+    """Return (mu_post, Sigma_post) of z after the rows of Y
+    were measured as y_n ~ N(z, Sigma_y), prior N(mu_z, Sigma_z).
+    """
+
+    # Convert inputs to NumPy arrays.
+    Y = np.asarray(Y, dtype=float)
+    Sigma_y = np.asarray(Sigma_y, dtype=float)
+    mu_z = np.asarray(mu_z, dtype=float)
+    Sigma_z = np.asarray(Sigma_z, dtype=float)
+
+    # Get the number of measurements and dimensions.
+    N, L = Y.shape
+
+    # Compute the prior and observation precision matrices.
+    Lambda_z = np.linalg.solve(Sigma_z, np.eye(L))
+    Lambda_y = np.linalg.solve(Sigma_y, np.eye(L))
+
+    # Compute the posterior precision:
+    # Lambda_post = inv(Sigma_z) + N * inv(Sigma_y)
+    Lambda_post = Lambda_z + N * Lambda_y
+
+    # Compute the posterior covariance.
+    Sigma_post = np.linalg.solve(
+        Lambda_post,
+        np.eye(L)
+    )
+
+    # Compute the sufficient statistic: sum of all observations.
+    y_sum = np.sum(Y, axis=0)
+
+    # Compute the information-weighted posterior mean:
+    # eta_post = inv(Sigma_y) @ sum(Y) + inv(Sigma_z) @ mu_z
+    eta_post = Lambda_y @ y_sum + Lambda_z @ mu_z
+
+    # Solve for the posterior mean.
+    mu_post = np.linalg.solve(Lambda_post, eta_post)
+
+    # Symmetrize the posterior covariance.
+    Sigma_post = 0.5 * (Sigma_post + Sigma_post.T)
+
+    return mu_post, Sigma_post
+
