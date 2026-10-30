@@ -11,6 +11,7 @@ python scaffold.py
 ## Steps
 
 - [x] **1.** mahalanobis_sq
+- [x] **2.** mvn_logpdf
 
 ---
 

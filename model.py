@@ -10,30 +10,48 @@ import numpy as np
 import numpy as np
 
 def mahalanobis_sq(Y, mu, Sigma):
-    """
-    Return (delta2, Z):
-    - delta2: squared Mahalanobis distances of shape (N,)
-    - Z: rotated coordinates of shape (N, D)
-    """
+    """Return (delta2, Z): squared Mahalanobis distances (N,) and rotated coordinates Z = (Y - mu) @ U (N, D)."""
 
-    # Convert a single point of shape (D,) into an array of shape (1, D).
-    Y = np.asarray(Y)
-    if Y.ndim == 1:
-        Y = Y.reshape(1, -1)
+    # Ensure Y is a 2D array, treating a single point as N = 1.
+    Y = np.atleast_2d(Y)
 
     # Eigendecompose the covariance matrix.
     # Eigenvalues are returned in ascending order.
     eigenvalues, U = np.linalg.eigh(Sigma)
 
     # Center the observations by subtracting the mean.
-    centered_Y = Y - mu
+    Y_centered = Y - mu
 
     # Rotate the centered observations into the eigenvector basis.
-    # Each column of Z corresponds to an eigenvalue.
-    Z = centered_Y @ U
+    Z = Y_centered @ U
 
-    # Compute the squared Mahalanobis distance:
-    # delta2[n] = sum_j (Z[n, j]^2 / eigenvalues[j])
+    # Compute squared Mahalanobis distances.
+    # Each rotated coordinate is scaled by its corresponding eigenvalue.
+    delta2 = np.sum((Z ** 2) / eigenvalues, axis=1)
+
+    return delta2, Z
+
+# Step 2 - mvn_logpdf
+import numpy as np
+
+def mahalanobis_sq(Y, mu, Sigma):
+    """Return (delta2, Z): squared Mahalanobis distances (N,) and rotated coordinates Z = (Y - mu) @ U (N, D)."""
+
+    # Ensure Y is a 2D array, treating a single point as N = 1.
+    Y = np.atleast_2d(Y)
+
+    # Eigendecompose the covariance matrix.
+    # Eigenvalues are returned in ascending order.
+    eigenvalues, U = np.linalg.eigh(Sigma)
+
+    # Center the observations by subtracting the mean.
+    Y_centered = Y - mu
+
+    # Rotate the centered observations into the eigenvector basis.
+    Z = Y_centered @ U
+
+    # Compute squared Mahalanobis distances.
+    # Each rotated coordinate is scaled by its corresponding eigenvalue.
     delta2 = np.sum((Z ** 2) / eigenvalues, axis=1)
 
     return delta2, Z
