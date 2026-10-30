@@ -19,6 +19,7 @@ python scaffold.py
 - [x] **7.** impute_known
 - [x] **8.** multiple_impute
 - [x] **9.** imputation_scores
+- [x] **10.** fit_mvn
 
 ---
 

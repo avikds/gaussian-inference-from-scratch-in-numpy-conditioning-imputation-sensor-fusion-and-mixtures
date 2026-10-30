@@ -373,3 +373,33 @@ def imputation_scores(X_true, X_nan, X_mean, X_var):
         "coverage95": float(coverage95)
     }
 
+# Step 10 - fit_mvn
+def fit_mvn(X, ridge=0.0):
+    """Return the MLE (mu, Sigma) of a Gaussian fit to the rows
+    of X, with ridge * I added to Sigma.
+    """
+
+    # Convert the input into a NumPy array.
+    X = np.asarray(X, dtype=float)
+
+    # Get the number of observations and dimensions.
+    N, D = X.shape
+
+    # Compute the column-wise sample mean.
+    mu = np.mean(X, axis=0)
+
+    # Centre the observations around the mean.
+    X_centered = X - mu
+
+    # Compute the maximum likelihood covariance estimate.
+    # MLE uses divisor N rather than N - 1.
+    Sigma = (X_centered.T @ X_centered) / N
+
+    # Add ridge regularization to the covariance matrix.
+    Sigma += ridge * np.eye(D)
+
+    # Symmetrize the covariance matrix to avoid round-off asymmetry.
+    Sigma = 0.5 * (Sigma + Sigma.T)
+
+    return mu, Sigma
+
