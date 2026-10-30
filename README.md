@@ -30,6 +30,7 @@ python scaffold.py
 - [x] **18.** fuse_sensors
 - [x] **19.** diagnose_sensors
 - [x] **20.** logsumexp_rows
+- [x] **21.** gmm_responsibilities
 
 ---
 

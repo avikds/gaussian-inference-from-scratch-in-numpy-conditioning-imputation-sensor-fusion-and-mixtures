@@ -835,3 +835,43 @@ def logsumexp_rows(A):
 
     return result
 
+# Step 21 - gmm_responsibilities
+def gmm_responsibilities(Y, pis, mus, Sigmas):
+    """Return (R, loglik): responsibilities r_nk of shape (N, K)
+    and the total log likelihood (float).
+    """
+
+    # Convert inputs to NumPy arrays.
+    Y = np.asarray(Y, dtype=float)
+    pis = np.asarray(pis, dtype=float)
+    mus = np.asarray(mus, dtype=float)
+    Sigmas = np.asarray(Sigmas, dtype=float)
+
+    # Get the number of observations and mixture components.
+    N, D = Y.shape
+    K = len(pis)
+
+    # Initialize the matrix of log joint probabilities.
+    log_joint = np.empty((N, K), dtype=float)
+
+    # Compute log joint probabilities for every observation
+    # and every Gaussian mixture component.
+    for k in range(K):
+        log_joint[:, k] = (
+            np.log(pis[k])
+            + mvn_logpdf(Y, mus[k], Sigmas[k])
+        )
+
+    # Compute the log marginal probability of each observation
+    # using the numerically stable log-sum-exp function.
+    log_normalizer = logsumexp_rows(log_joint)
+
+    # Normalize the log joint probabilities to obtain responsibilities.
+    # Each row of R sums to 1.
+    R = np.exp(log_joint - log_normalizer[:, None])
+
+    # Compute the total log likelihood across all observations.
+    loglik = float(np.sum(log_normalizer))
+
+    return R, loglik
+
