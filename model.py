@@ -466,3 +466,45 @@ def compare_imputers(X_train, X_true, X_nan, ridge=1e-3):
         "mvn": mvn_scores
     }
 
+# Step 12 - lgs_joint
+def lgs_joint(mu_z, Sigma_z, W, b, Sigma_y):
+    """Return (mu, Sigma) of the joint Gaussian over (z, y)
+    for p(z) = N(mu_z, Sigma_z),
+    p(y|z) = N(Wz + b, Sigma_y).
+    """
+
+    # Convert inputs to NumPy arrays.
+    mu_z = np.asarray(mu_z, dtype=float)
+    Sigma_z = np.asarray(Sigma_z, dtype=float)
+    W = np.asarray(W, dtype=float)
+    b = np.asarray(b, dtype=float)
+    Sigma_y = np.asarray(Sigma_y, dtype=float)
+
+    # Compute the mean of y:
+    # E[y] = W @ mu_z + b
+    mu_y = W @ mu_z + b
+
+    # Compute the covariance between z and y:
+    # Cov(z, y) = Sigma_z @ W.T
+    Sigma_zy = Sigma_z @ W.T
+
+    # Compute the covariance of y:
+    # Cov(y) = W @ Sigma_z @ W.T + Sigma_y
+    Sigma_yy = W @ Sigma_z @ W.T + Sigma_y
+
+    # Construct the joint mean of the stacked vector (z, y).
+    mu = np.concatenate((mu_z, mu_y))
+
+    # Construct the joint covariance matrix:
+    # [ Cov(z, z)   Cov(z, y) ]
+    # [ Cov(y, z)   Cov(y, y) ]
+    Sigma = np.block([
+        [Sigma_z,    Sigma_zy],
+        [Sigma_zy.T, Sigma_yy]
+    ])
+
+    # Symmetrize the joint covariance matrix.
+    Sigma = 0.5 * (Sigma + Sigma.T)
+
+    return mu, Sigma
+
