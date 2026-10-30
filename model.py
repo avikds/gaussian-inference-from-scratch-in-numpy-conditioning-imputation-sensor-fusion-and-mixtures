@@ -559,3 +559,41 @@ def lgs_posterior(mu_z, Sigma_z, W, b, Sigma_y, y):
 
     return mu_post, Sigma_post
 
+# Step 14 - lgs_log_evidence
+def lgs_log_evidence(mu_z, Sigma_z, W, b, Sigma_y, y):
+    """Return log p(y) = log N(y | W mu_z + b,
+    Sigma_y + W Sigma_z W.T) as a Python float.
+    """
+
+    # Convert inputs to NumPy arrays.
+    mu_z = np.asarray(mu_z, dtype=float)
+    Sigma_z = np.asarray(Sigma_z, dtype=float)
+    W = np.asarray(W, dtype=float)
+    b = np.asarray(b, dtype=float)
+    Sigma_y = np.asarray(Sigma_y, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    # Compute the marginal mean of the observation:
+    # E[y] = W @ mu_z + b
+    mu_y = W @ mu_z + b
+
+    # Compute the marginal covariance of the observation:
+    # Cov(y) = Sigma_y + W @ Sigma_z @ W.T
+    Sigma_marginal = Sigma_y + W @ Sigma_z @ W.T
+
+    # Symmetrize the marginal covariance matrix.
+    Sigma_marginal = 0.5 * (
+        Sigma_marginal + Sigma_marginal.T
+    )
+
+    # Evaluate the marginal Gaussian log density
+    # using the previously implemented mvn_logpdf function.
+    log_evidence = mvn_logpdf(
+        y,
+        mu_y,
+        Sigma_marginal
+    )
+
+    # Return a standard Python float.
+    return float(log_evidence[0])
+

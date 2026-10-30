@@ -23,6 +23,7 @@ python scaffold.py
 - [x] **11.** compare_imputers
 - [x] **12.** lgs_joint
 - [x] **13.** lgs_posterior
+- [x] **14.** lgs_log_evidence
 
 ---
 
