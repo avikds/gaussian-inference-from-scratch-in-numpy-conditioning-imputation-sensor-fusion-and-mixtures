@@ -597,3 +597,40 @@ def lgs_log_evidence(mu_z, Sigma_z, W, b, Sigma_y, y):
     # Return a standard Python float.
     return float(log_evidence[0])
 
+# Step 15 - infer_scalar
+def infer_scalar(ys, sigma2, mu0, tau0_sq):
+    """Return (mu_N, tau2_N), the posterior of a scalar z after
+    measurements ys ~ N(z, sigma2), prior N(mu0, tau0_sq).
+    """
+
+    # Convert measurements into a one-dimensional NumPy array.
+    ys = np.asarray(ys, dtype=float).reshape(-1)
+
+    # Number of measurements.
+    N = len(ys)
+
+    # Construct the prior distribution for the scalar latent variable.
+    mu_z = np.array([mu0], dtype=float)
+    Sigma_z = np.array([[tau0_sq]], dtype=float)
+
+    # Construct the linear Gaussian observation model:
+    # y = W @ z + b + noise
+    W = np.ones((N, 1))
+    b = np.zeros(N)
+
+    # Observation noise covariance: sigma2 * I_N.
+    Sigma_y = sigma2 * np.eye(N)
+
+    # Compute the posterior using the previously implemented function.
+    mu_post, Sigma_post = lgs_posterior(
+        mu_z,
+        Sigma_z,
+        W,
+        b,
+        Sigma_y,
+        ys
+    )
+
+    # Return posterior mean and variance as Python floats.
+    return float(mu_post[0]), float(Sigma_post[0, 0])
+
