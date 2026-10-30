@@ -1265,3 +1265,42 @@ def bits_per_pixel(X, pis, mus):
     # Return a standard Python float.
     return float(bpp)
 
+# Step 29 - bmm_complete
+def bmm_complete(X, visible, pis, mus):
+    """Return (hidden, P): hidden pixel indices and
+    p(x_hidden = 1 | x_visible) under the Bernoulli mixture.
+    """
+
+    # Convert inputs to NumPy arrays.
+    X = np.asarray(X, dtype=float)
+    visible = np.asarray(visible, dtype=int).reshape(-1)
+    pis = np.asarray(pis, dtype=float)
+    mus = np.asarray(mus, dtype=float)
+
+    # Get the number of observations and pixels.
+    N, D = X.shape
+
+    # Identify hidden pixel indices in ascending order.
+    hidden = np.setdiff1d(np.arange(D), visible)
+
+    # Compute log joint probabilities using visible pixels only.
+    log_joint = (
+        np.log(pis)[None, :]
+        + bmm_log_component(
+            X[:, visible],
+            mus[:, visible]
+        )
+    )
+
+    # Normalize the log joint probabilities to obtain
+    # posterior responsibilities for each image.
+    log_normalizer = logsumexp_rows(log_joint)
+
+    R = np.exp(log_joint - log_normalizer[:, None])
+
+    # Predict hidden pixel probabilities by averaging
+    # component probabilities using posterior responsibilities.
+    P = R @ mus[:, hidden]
+
+    return hidden, P
+
