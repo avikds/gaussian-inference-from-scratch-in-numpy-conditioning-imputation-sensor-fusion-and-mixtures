@@ -875,3 +875,49 @@ def gmm_responsibilities(Y, pis, mus, Sigmas):
 
     return R, loglik
 
+# Step 22 - gmm_m_step
+def gmm_m_step(Y, R, reg=1e-6):
+    """Return (pis, mus, Sigmas) maximising the expected
+    complete-data log likelihood for responsibilities R.
+    """
+
+    # Convert inputs to NumPy arrays.
+    Y = np.asarray(Y, dtype=float)
+    R = np.asarray(R, dtype=float)
+
+    # Get the number of observations, dimensions and components.
+    N, D = Y.shape
+    K = R.shape[1]
+
+    # Compute the effective number of observations assigned
+    # to each Gaussian component.
+    Nk = np.sum(R, axis=0)
+
+    # Update the mixture weights.
+    pis = Nk / N
+
+    # Update the component means using weighted averages.
+    mus = (R.T @ Y) / Nk[:, None]
+
+    # Compute deviations from the corresponding component means.
+    diff = Y[:, None, :] - mus[None, :, :]
+
+    # Update covariance matrices using weighted outer products.
+    Sigmas = np.einsum(
+        'nk,nkd,nke->kde',
+        R,
+        diff,
+        diff
+    ) / Nk[:, None, None]
+
+    # Add diagonal regularization to each covariance matrix.
+    Sigmas += reg * np.eye(D)[None, :, :]
+
+    # Symmetrize covariance matrices to eliminate
+    # floating-point asymmetry.
+    Sigmas = 0.5 * (
+        Sigmas + np.swapaxes(Sigmas, 1, 2)
+    )
+
+    return pis, mus, Sigmas
+
