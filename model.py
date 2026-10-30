@@ -712,3 +712,35 @@ def stack_sensors(ys, Sigmas):
 
     return y, W, Sigma_y
 
+# Step 18 - fuse_sensors
+def fuse_sensors(ys, Sigmas, mu_z, Sigma_z):
+    """Return (mu_post, Sigma_post) of z given one reading per sensor,
+    y_m ~ N(z, Sigmas[m]), prior N(mu_z, Sigma_z).
+    """
+
+    # Convert prior parameters to NumPy arrays.
+    mu_z = np.asarray(mu_z, dtype=float)
+    Sigma_z = np.asarray(Sigma_z, dtype=float)
+
+    # Stack all sensor readings into a single observation model.
+    y, W, Sigma_y = stack_sensors(ys, Sigmas)
+
+    # The observation model has zero bias.
+    b = np.zeros(y.shape[0], dtype=float)
+
+    # Compute the posterior distribution using Bayes rule
+    # for linear Gaussian systems.
+    mu_post, Sigma_post = lgs_posterior(
+        mu_z,
+        Sigma_z,
+        W,
+        b,
+        Sigma_y,
+        y
+    )
+
+    # Symmetrize the posterior covariance for numerical stability.
+    Sigma_post = 0.5 * (Sigma_post + Sigma_post.T)
+
+    return mu_post, Sigma_post
+
