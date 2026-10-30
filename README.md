@@ -29,6 +29,7 @@ python scaffold.py
 - [x] **17.** stack_sensors
 - [x] **18.** fuse_sensors
 - [x] **19.** diagnose_sensors
+- [x] **20.** logsumexp_rows
 
 ---
 

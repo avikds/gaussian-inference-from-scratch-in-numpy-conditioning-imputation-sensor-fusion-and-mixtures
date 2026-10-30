@@ -813,3 +813,25 @@ def diagnose_sensors(readings, Sigmas, mu_z, Sigma_z, scales):
 
     return best, table
 
+# Step 20 - logsumexp_rows
+def logsumexp_rows(A):
+    """Return log(sum_k exp(A[n, k])) for every row n,
+    shape (N,), computed stably.
+    """
+
+    # Convert input to a NumPy array.
+    A = np.asarray(A, dtype=float)
+
+    # Find the maximum value in each row.
+    # keepdims=True preserves the shape for broadcasting.
+    row_max = np.max(A, axis=1, keepdims=True)
+
+    # Subtract the row maximum before exponentiation
+    # to prevent numerical overflow and underflow.
+    shifted = A - row_max
+
+    # Compute log(sum(exp(shifted))) and add back the maximum.
+    result = np.log(np.sum(np.exp(shifted), axis=1)) + row_max[:, 0]
+
+    return result
+
