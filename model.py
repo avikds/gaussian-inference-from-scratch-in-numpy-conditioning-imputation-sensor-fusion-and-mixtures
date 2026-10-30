@@ -744,3 +744,72 @@ def fuse_sensors(ys, Sigmas, mu_z, Sigma_z):
 
     return mu_post, Sigma_post
 
+# Step 19 - diagnose_sensors
+def diagnose_sensors(readings, Sigmas, mu_z, Sigma_z, scales):
+    """Return (best, table): table maps (None, 1.0) and every
+    (m, s) hypothesis to its total log evidence.
+    """
+
+    # Convert readings and covariance matrices to NumPy arrays.
+    readings = [np.asarray(r, dtype=float) for r in readings]
+    Sigmas = [np.asarray(S, dtype=float) for S in Sigmas]
+
+    M = len(readings)
+    T, L = readings[0].shape
+
+    # Start with the hypothesis that all sensors are nominal.
+    hypotheses = [(None, 1.0)]
+
+    # Add hypotheses in which exactly one sensor is degraded.
+    for m in range(M):
+        for s in scales:
+            hypotheses.append((m, float(s)))
+
+    # Store the total log evidence for every hypothesis.
+    table = {}
+
+    # Evaluate each sensor degradation hypothesis.
+    for m, s in hypotheses:
+
+        # Construct the covariance matrices under this hypothesis.
+        # Only sensor m receives the candidate scaling factor.
+        covariances = [
+            S * s if j == m else S.copy()
+            for j, S in enumerate(Sigmas)
+        ]
+
+        total_log_evidence = 0.0
+
+        # Evaluate the observations at every time step.
+        for t in range(T):
+
+            # Extract the reading from each sensor at time t.
+            ys_t = [readings[j][t] for j in range(M)]
+
+            # Stack the sensor readings and their noise covariances.
+            y, W, Sigma_y = stack_sensors(ys_t, covariances)
+
+            # The observation model has zero bias.
+            b = np.zeros(M * L)
+
+            # Calculate the marginal log evidence for this time step.
+            log_evidence = lgs_log_evidence(
+                mu_z,
+                Sigma_z,
+                W,
+                b,
+                Sigma_y,
+                y
+            )
+
+            # Accumulate the evidence across all time steps.
+            total_log_evidence += log_evidence
+
+        # Store the total evidence for the current hypothesis.
+        table[(m, s)] = float(total_log_evidence)
+
+    # Select the hypothesis with the highest total log evidence.
+    best = max(table, key=table.get)
+
+    return best, table
+

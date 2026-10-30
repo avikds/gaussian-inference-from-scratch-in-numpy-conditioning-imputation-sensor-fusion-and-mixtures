@@ -28,6 +28,7 @@ python scaffold.py
 - [x] **16.** infer_vector
 - [x] **17.** stack_sensors
 - [x] **18.** fuse_sensors
+- [x] **19.** diagnose_sensors
 
 ---
 
