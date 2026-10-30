@@ -1233,3 +1233,35 @@ def fit_bmm(X, K, iters, seed, alpha=2.0):
 
     return pis, mus, trace
 
+# Step 28 - bits_per_pixel
+def bits_per_pixel(X, pis, mus):
+    """Return -mean_n log2 p(x_n) / D under the Bernoulli
+    mixture (pis, mus), as a Python float.
+    """
+
+    # Convert inputs to NumPy arrays.
+    X = np.asarray(X, dtype=float)
+    pis = np.asarray(pis, dtype=float)
+    mus = np.asarray(mus, dtype=float)
+
+    # Get the number of observations and pixels.
+    N, D = X.shape
+
+    # Compute the log joint probabilities:
+    # log(pi_k) + log p(x_n | z_n = k).
+    log_joint = (
+        np.log(pis)[None, :]
+        + bmm_log_component(X, mus)
+    )
+
+    # Compute the log marginal probability of each image
+    # using the numerically stable log-sum-exp function.
+    log_prob = logsumexp_rows(log_joint)
+
+    # Convert the average negative log likelihood from nats
+    # to bits and divide by the number of pixels.
+    bpp = -np.mean(log_prob) / (D * np.log(2.0))
+
+    # Return a standard Python float.
+    return float(bpp)
+

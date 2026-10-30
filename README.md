@@ -37,6 +37,7 @@ python scaffold.py
 - [x] **25.** gmm_impute
 - [x] **26.** bmm_log_component
 - [x] **27.** fit_bmm
+- [x] **28.** bits_per_pixel
 
 ---
 
