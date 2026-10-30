@@ -986,3 +986,36 @@ def fit_gmm(Y, K, iters, seed, reg=1e-6):
 
     return pis, mus, Sigmas, trace
 
+# Step 24 - hard_assign
+def hard_assign(Y, pis, mus, Sigmas):
+    """Return the most probable component index for every row of Y
+    (eq 3.100), shape (N,).
+    """
+
+    # Convert inputs to NumPy arrays.
+    Y = np.asarray(Y, dtype=float)
+    pis = np.asarray(pis, dtype=float)
+    mus = np.asarray(mus, dtype=float)
+    Sigmas = np.asarray(Sigmas, dtype=float)
+
+    # Get the number of observations and mixture components.
+    N = Y.shape[0]
+    K = len(pis)
+
+    # Store the log joint probabilities for every observation
+    # and every mixture component.
+    log_joint = np.empty((N, K), dtype=float)
+
+    # Compute log N(y_n | mu_k, Sigma_k) + log(pi_k).
+    for k in range(K):
+        log_joint[:, k] = (
+            mvn_logpdf(Y, mus[k], Sigmas[k])
+            + np.log(pis[k])
+        )
+
+    # Select the component with the highest log joint probability.
+    # np.argmax selects the lowest index in case of ties.
+    assignments = np.argmax(log_joint, axis=1)
+
+    return assignments
+

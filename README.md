@@ -33,6 +33,7 @@ python scaffold.py
 - [x] **21.** gmm_responsibilities
 - [x] **22.** gmm_m_step
 - [x] **23.** fit_gmm
+- [x] **24.** hard_assign
 
 ---
 
