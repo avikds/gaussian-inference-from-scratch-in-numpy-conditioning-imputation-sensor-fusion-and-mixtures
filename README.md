@@ -14,6 +14,7 @@ python scaffold.py
 - [x] **2.** mvn_logpdf
 - [x] **3.** mvn_sample
 - [x] **4.** affine_gaussian
+- [x] **5.** condition_gaussian
 
 ---
 

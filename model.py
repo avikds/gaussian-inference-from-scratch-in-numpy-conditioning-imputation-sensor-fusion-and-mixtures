@@ -127,3 +127,56 @@ def affine_gaussian(mu, Sigma, A, b):
 
     return new_mu, new_Sigma
 
+# Step 5 - condition_gaussian
+def condition_gaussian(mu, Sigma, idx_obs, y_obs):
+    """Return (idx_hid, mu_cond, Sigma_cond) for
+    p(y_hid | y_obs) using the moment form of eq 3.28.
+    """
+
+    # Convert inputs to NumPy arrays.
+    mu = np.asarray(mu, dtype=float)
+    Sigma = np.asarray(Sigma, dtype=float)
+    idx_obs = np.asarray(idx_obs, dtype=int).reshape(-1)
+    y_obs = np.asarray(y_obs, dtype=float).reshape(-1)
+
+    # Get the total number of dimensions.
+    D = len(mu)
+
+    # Identify hidden coordinates in ascending order.
+    idx_hid = np.setdiff1d(np.arange(D), idx_obs)
+
+    # Handle the case where no coordinates are observed.
+    if len(idx_obs) == 0:
+        return idx_hid, mu.copy(), Sigma.copy()
+
+    # Partition the mean vector.
+    mu_hid = mu[idx_hid]
+    mu_obs = mu[idx_obs]
+
+    # Partition the covariance matrix.
+    Sigma_11 = Sigma[np.ix_(idx_hid, idx_hid)]
+    Sigma_12 = Sigma[np.ix_(idx_hid, idx_obs)]
+    Sigma_21 = Sigma[np.ix_(idx_obs, idx_hid)]
+    Sigma_22 = Sigma[np.ix_(idx_obs, idx_obs)]
+
+    # Calculate the difference between observed values and their mean.
+    residual = y_obs - mu_obs
+
+    # Compute the conditional mean:
+    # mu_cond = mu_1 + Sigma_12 @ inv(Sigma_22) @ (y_obs - mu_2)
+    # Use np.linalg.solve instead of explicitly computing the inverse.
+    mu_cond = mu_hid + Sigma_12 @ np.linalg.solve(
+        Sigma_22, residual
+    )
+
+    # Compute the conditional covariance using the Schur complement:
+    # Sigma_cond = Sigma_11 - Sigma_12 @ inv(Sigma_22) @ Sigma_21
+    Sigma_cond = Sigma_11 - Sigma_12 @ np.linalg.solve(
+        Sigma_22, Sigma_21
+    )
+
+    # Symmetrize the conditional covariance to avoid round-off asymmetry.
+    Sigma_cond = 0.5 * (Sigma_cond + Sigma_cond.T)
+
+    return idx_hid, mu_cond, Sigma_cond
+
