@@ -35,6 +35,7 @@ python scaffold.py
 - [x] **23.** fit_gmm
 - [x] **24.** hard_assign
 - [x] **25.** gmm_impute
+- [x] **26.** bmm_log_component
 
 ---
 

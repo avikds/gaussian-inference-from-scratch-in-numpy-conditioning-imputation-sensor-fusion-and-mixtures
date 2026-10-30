@@ -1121,3 +1121,28 @@ def gmm_impute(X_nan, pis, mus, Sigmas):
 
     return X_mean, X_var
 
+# Step 26 - bmm_log_component
+def bmm_log_component(X, mus):
+    """Return log p(x_n | z_n = k) for binary rows X (N, D)
+    and on-probabilities mus (K, D), shape (N, K).
+    """
+
+    # Convert inputs to NumPy arrays.
+    X = np.asarray(X, dtype=float)
+    mus = np.asarray(mus, dtype=float)
+
+    # Compute log probabilities of observing 1 for each component.
+    log_mus = np.log(mus)
+
+    # Compute log probabilities of observing 0 for each component.
+    log_one_minus_mus = np.log1p(-mus)
+
+    # Calculate the log likelihood using two matrix products:
+    # X @ log(mus).T + (1 - X) @ log(1 - mus).T
+    log_likelihood = (
+        X @ log_mus.T
+        + (1.0 - X) @ log_one_minus_mus.T
+    )
+
+    return log_likelihood
+
