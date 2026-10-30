@@ -229,3 +229,48 @@ def condition_gaussian_precision(mu, Sigma, idx_obs, y_obs):
 
     return idx_hid, mu_cond, Sigma_cond
 
+# Step 7 - impute_known
+def impute_known(X_nan, mu, Sigma):
+    """Return (X_mean, X_var): posterior means and variances of the NaN
+    entries under N(mu, Sigma); observed entries keep their value
+    and get variance 0.
+    """
+
+    # Convert inputs to NumPy arrays.
+    X_nan = np.asarray(X_nan, dtype=float)
+    mu = np.asarray(mu, dtype=float)
+    Sigma = np.asarray(Sigma, dtype=float)
+
+    # Create separate output arrays without modifying the input.
+    X_mean = X_nan.copy()
+    X_var = np.zeros_like(X_nan, dtype=float)
+
+    # Process each observation independently.
+    for n in range(X_nan.shape[0]):
+
+        # Identify missing and observed coordinates.
+        missing = np.isnan(X_nan[n])
+        idx_hid = np.flatnonzero(missing)
+        idx_obs = np.flatnonzero(~missing)
+
+        # If nothing is missing, retain the original row.
+        if len(idx_hid) == 0:
+            continue
+
+        # Get the observed values.
+        y_obs = X_nan[n, idx_obs]
+
+        # Compute the conditional Gaussian distribution
+        # using the previously implemented function.
+        idx_cond, mu_cond, Sigma_cond = condition_gaussian(
+            mu, Sigma, idx_obs, y_obs
+        )
+
+        # Replace missing entries with their posterior means.
+        X_mean[n, idx_cond] = mu_cond
+
+        # Store posterior variances (diagonal of the conditional covariance).
+        X_var[n, idx_cond] = np.diag(Sigma_cond)
+
+    return X_mean, X_var
+
