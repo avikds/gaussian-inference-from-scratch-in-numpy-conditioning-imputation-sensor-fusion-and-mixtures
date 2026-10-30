@@ -329,3 +329,47 @@ def multiple_impute(X_nan, mu, Sigma, m, rng):
 
     return completed
 
+# Step 9 - imputation_scores
+def imputation_scores(X_true, X_nan, X_mean, X_var):
+    """Return {"rmse", "nlpd", "coverage95"} over the hidden (NaN)
+    entries of X_nan, as Python floats.
+    """
+
+    # Convert inputs to NumPy arrays.
+    X_true = np.asarray(X_true, dtype=float)
+    X_nan = np.asarray(X_nan, dtype=float)
+    X_mean = np.asarray(X_mean, dtype=float)
+    X_var = np.asarray(X_var, dtype=float)
+
+    # Identify only the entries that were originally missing.
+    mask = np.isnan(X_nan)
+
+    # Extract prediction errors and corresponding posterior variances.
+    errors = X_mean[mask] - X_true[mask]
+    variances = X_var[mask]
+
+    # 1. Root Mean Squared Error (RMSE).
+    rmse = np.sqrt(np.mean(errors ** 2))
+
+    # 2. Negative Log Predictive Density (NLPD).
+    # Compute the Gaussian negative log density for each hidden entry.
+    nlpd = np.mean(
+        0.5 * (
+            np.log(2.0 * np.pi * variances)
+            + (errors ** 2) / variances
+        )
+    )
+
+    # 3. 95% predictive interval coverage.
+    # Check whether the true value lies within mean +/- 1.96 * std.
+    coverage95 = np.mean(
+        np.abs(errors) <= 1.96 * np.sqrt(variances)
+    )
+
+    # Return all metrics as standard Python floats.
+    return {
+        "rmse": float(rmse),
+        "nlpd": float(nlpd),
+        "coverage95": float(coverage95)
+    }
+

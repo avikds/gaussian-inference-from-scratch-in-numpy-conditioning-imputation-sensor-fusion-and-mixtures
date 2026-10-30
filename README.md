@@ -18,6 +18,7 @@ python scaffold.py
 - [x] **6.** condition_gaussian_precision
 - [x] **7.** impute_known
 - [x] **8.** multiple_impute
+- [x] **9.** imputation_scores
 
 ---
 
