@@ -1146,3 +1146,90 @@ def bmm_log_component(X, mus):
 
     return log_likelihood
 
+# Step 27 - fit_bmm
+def fit_bmm(X, K, iters, seed, alpha=2.0):
+    """Fit a Bernoulli mixture by MAP-EM with a Beta(alpha, alpha)
+    prior on mus and add-one smoothing on pis.
+    Return (pis, mus, trace) with trace = MAP objective
+    before each M step.
+    """
+
+    # Convert input into a NumPy array.
+    X = np.asarray(X, dtype=float)
+
+    # Get the number of observations and dimensions.
+    N, D = X.shape
+
+    # Initialize the random number generator.
+    rng = np.random.default_rng(seed)
+
+    # Initialize Bernoulli probabilities uniformly between 0.25 and 0.75.
+    mus = rng.uniform(0.25, 0.75, size=(K, D))
+
+    # Initialize mixture weights uniformly.
+    pis = np.full(K, 1.0 / K)
+
+    # Store the MAP objective before each M step.
+    trace = []
+
+    # --------------------------------------------------
+    # Expectation-Maximization iterations
+    # --------------------------------------------------
+
+    for _ in range(iters):
+
+        # E-step: calculate log joint probabilities.
+        logp = (
+            np.log(pis)[None, :]
+            + bmm_log_component(X, mus)
+        )
+
+        # Compute the log marginal probability of each observation.
+        lse = logsumexp_rows(logp)
+
+        # Calculate responsibilities using log-sum-exp normalization.
+        R = np.exp(logp - lse[:, None])
+
+        # --------------------------------------------------
+        # Record the MAP objective before the M step.
+        # --------------------------------------------------
+
+        # Log likelihood of the observations.
+        log_likelihood = np.sum(lse)
+
+        # Log prior contribution from the Beta(alpha, alpha) priors.
+        beta_prior = (alpha - 1.0) * np.sum(
+            np.log(mus) + np.log1p(-mus)
+        )
+
+        # Log prior contribution from the mixture weights.
+        mixture_prior = np.sum(np.log(pis))
+
+        # Total MAP objective.
+        objective = (
+            log_likelihood
+            + beta_prior
+            + mixture_prior
+        )
+
+        trace.append(float(objective))
+
+        # --------------------------------------------------
+        # M-step: update mixture parameters.
+        # --------------------------------------------------
+
+        # Effective number of observations assigned to each component.
+        Nk = np.sum(R, axis=0)
+
+        # Update mixture weights using add-one smoothing.
+        pis = (Nk + 1.0) / (N + K)
+
+        # Update Bernoulli probabilities using Beta prior smoothing.
+        mus = (
+            R.T @ X + alpha - 1.0
+        ) / (
+            Nk[:, None] + 2.0 * alpha - 2.0
+        )
+
+    return pis, mus, trace
+
