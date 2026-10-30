@@ -32,6 +32,7 @@ python scaffold.py
 - [x] **20.** logsumexp_rows
 - [x] **21.** gmm_responsibilities
 - [x] **22.** gmm_m_step
+- [x] **23.** fit_gmm
 
 ---
 

@@ -921,3 +921,68 @@ def gmm_m_step(Y, R, reg=1e-6):
 
     return pis, mus, Sigmas
 
+# Step 23 - fit_gmm
+def fit_gmm(Y, K, iters, seed, reg=1e-6):
+    """Fit a K-component GMM by EM. Return (pis, mus, Sigmas, trace)
+    with trace = log likelihood before each M step.
+    """
+
+    # Convert input into a NumPy array.
+    Y = np.asarray(Y, dtype=float)
+
+    # Get the number of observations and dimensions.
+    N, D = Y.shape
+
+    # Initialize the random number generator.
+    rng = np.random.default_rng(seed)
+
+    # --------------------------------------------------
+    # 1. Initialize mixture parameters
+    # --------------------------------------------------
+
+    # Initialize component means using K distinct random data rows.
+    mus = Y[rng.choice(N, K, replace=False)].copy()
+
+    # Initialize all mixture weights uniformly.
+    pis = np.full(K, 1.0 / K)
+
+    # Compute the maximum likelihood covariance of the entire dataset.
+    data_mean = np.mean(Y, axis=0)
+    centered = Y - data_mean
+
+    Sigma0 = (centered.T @ centered) / N
+
+    # Add regularization to the initial covariance.
+    Sigma0 += reg * np.eye(D)
+
+    # Symmetrize the covariance matrix.
+    Sigma0 = 0.5 * (Sigma0 + Sigma0.T)
+
+    # Initialize every component with an independent copy
+    # of the same data covariance matrix.
+    Sigmas = np.repeat(Sigma0[None, :, :], K, axis=0)
+
+    # Store the log likelihood before each M step.
+    trace = []
+
+    # --------------------------------------------------
+    # 2. Expectation-Maximization iterations
+    # --------------------------------------------------
+
+    for _ in range(iters):
+
+        # E-step: calculate responsibilities and log likelihood.
+        R, loglik = gmm_responsibilities(
+            Y, pis, mus, Sigmas
+        )
+
+        # Record the log likelihood before the M step.
+        trace.append(float(loglik))
+
+        # M-step: update mixture weights, means and covariances.
+        pis, mus, Sigmas = gmm_m_step(
+            Y, R, reg=reg
+        )
+
+    return pis, mus, Sigmas, trace
+
