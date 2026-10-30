@@ -678,3 +678,37 @@ def infer_vector(Y, Sigma_y, mu_z, Sigma_z):
 
     return mu_post, Sigma_post
 
+# Step 17 - stack_sensors
+def stack_sensors(ys, Sigmas):
+    """Return (y, W, Sigma_y): concatenated readings,
+    W = [I; I; ...] and the block-diagonal noise covariance.
+    """
+
+    # Convert sensor readings and covariance matrices to NumPy arrays.
+    ys = [np.asarray(y, dtype=float).reshape(-1) for y in ys]
+    Sigmas = [np.asarray(Sigma, dtype=float) for Sigma in Sigmas]
+
+    # Determine the number of sensors and the dimension of each reading.
+    M = len(ys)
+    L = ys[0].shape[0]
+
+    # Concatenate all sensor readings into a single vector.
+    y = np.concatenate(ys)
+
+    # Stack M identity matrices vertically.
+    # Each sensor measures the same unknown vector z.
+    I = np.eye(L)
+    W = np.vstack([I for _ in range(M)])
+
+    # Construct the block-diagonal observation noise covariance.
+    Sigma_y = np.zeros((M * L, M * L), dtype=float)
+
+    for i in range(M):
+        start = i * L
+        end = start + L
+
+        # Place each sensor's covariance in its corresponding block.
+        Sigma_y[start:end, start:end] = Sigmas[i]
+
+    return y, W, Sigma_y
+

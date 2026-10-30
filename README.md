@@ -26,6 +26,7 @@ python scaffold.py
 - [x] **14.** lgs_log_evidence
 - [x] **15.** infer_scalar
 - [x] **16.** infer_vector
+- [x] **17.** stack_sensors
 
 ---
 
