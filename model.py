@@ -1019,3 +1019,105 @@ def hard_assign(Y, pis, mus, Sigmas):
 
     return assignments
 
+# Step 25 - gmm_impute
+def gmm_impute(X_nan, pis, mus, Sigmas):
+    """Return (X_mean, X_var) for the NaN entries under a GMM:
+    a responsibility-weighted mixture of Gaussian conditionals.
+    """
+
+    # Convert inputs to NumPy arrays.
+    X_nan = np.asarray(X_nan, dtype=float)
+    pis = np.asarray(pis, dtype=float)
+    mus = np.asarray(mus, dtype=float)
+    Sigmas = np.asarray(Sigmas, dtype=float)
+
+    # Get the number of observations and dimensions.
+    N, D = X_nan.shape
+    K = len(pis)
+
+    # Initialize output arrays.
+    # Observed values are preserved and receive zero variance.
+    X_mean = X_nan.copy()
+    X_var = np.zeros_like(X_nan, dtype=float)
+
+    # Process each observation independently.
+    for n in range(N):
+
+        # Identify observed and hidden coordinates.
+        idx_obs = np.flatnonzero(~np.isnan(X_nan[n]))
+        idx_hid = np.flatnonzero(np.isnan(X_nan[n]))
+
+        # Skip rows without missing entries.
+        if len(idx_hid) == 0:
+            continue
+
+        # Get the observed values.
+        y_obs = X_nan[n, idx_obs]
+
+        # Store the conditional means and variances
+        # for each Gaussian mixture component.
+        cond_means = np.zeros((K, len(idx_hid)))
+        cond_vars = np.zeros((K, len(idx_hid)))
+
+        # Compute the log posterior mixture weights.
+        log_weights = np.zeros(K, dtype=float)
+
+        for k in range(K):
+
+            # Component prior log weight.
+            log_weights[k] = np.log(pis[k])
+
+            # Calculate the likelihood of the observed entries.
+            if len(idx_obs) > 0:
+                mu_obs = mus[k, idx_obs]
+                Sigma_obs = Sigmas[k][np.ix_(idx_obs, idx_obs)]
+
+                log_weights[k] += mvn_logpdf(
+                    y_obs,
+                    mu_obs,
+                    Sigma_obs
+                )[0]
+
+            # Compute the conditional Gaussian distribution
+            # of the hidden coordinates for component k.
+            idx_cond, mu_cond, Sigma_cond = condition_gaussian(
+                mus[k],
+                Sigmas[k],
+                idx_obs,
+                y_obs
+            )
+
+            # Store the conditional mean and diagonal variance.
+            cond_means[k] = mu_cond
+            cond_vars[k] = np.diag(Sigma_cond)
+
+        # Normalize the component weights using log-sum-exp.
+        log_normalizer = logsumexp_rows(
+            log_weights.reshape(1, -1)
+        )[0]
+
+        weights = np.exp(log_weights - log_normalizer)
+
+        # Compute the mixture posterior mean:
+        # m_bar = sum_k w_k * m_k
+        mixture_mean = weights @ cond_means
+
+        # Compute the mixture posterior variance using
+        # the law of total variance:
+        # Var(X) = E[Var(X | k)] + Var(E[X | k])
+        second_moment = weights @ (
+            cond_vars + cond_means ** 2
+        )
+
+        mixture_var = second_moment - mixture_mean ** 2
+
+        # Protect against tiny negative variances due
+        # to floating-point round-off.
+        mixture_var = np.maximum(mixture_var, 0.0)
+
+        # Fill the missing entries with mixture posterior moments.
+        X_mean[n, idx_hid] = mixture_mean
+        X_var[n, idx_hid] = mixture_var
+
+    return X_mean, X_var
+
