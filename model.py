@@ -100,3 +100,30 @@ def mvn_sample(mu, Sigma, n, rng):
 
     return samples
 
+# Step 4 - affine_gaussian
+def affine_gaussian(mu, Sigma, A, b):
+    """Return (A mu + b, A Sigma A^T) for x ~ N(mu, Sigma);
+    A may be a single row.
+    """
+
+    # Convert inputs to NumPy arrays.
+    mu = np.asarray(mu, dtype=float)
+    Sigma = np.asarray(Sigma, dtype=float)
+    A = np.asarray(A, dtype=float)
+    b = np.asarray(b, dtype=float)
+
+    # Handle a one-dimensional A as a single row (M = 1).
+    if A.ndim == 1:
+        A = A.reshape(1, -1)
+
+    # Compute the transformed mean.
+    new_mu = A @ mu + b
+
+    # Compute the transformed covariance.
+    new_Sigma = A @ Sigma @ A.T
+
+    # Symmetrize the covariance to eliminate floating-point asymmetry.
+    new_Sigma = 0.5 * (new_Sigma + new_Sigma.T)
+
+    return new_mu, new_Sigma
+
