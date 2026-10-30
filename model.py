@@ -74,3 +74,29 @@ def mvn_logpdf(Y, mu, Sigma):
 
     return log_density
 
+# Step 3 - mvn_sample
+def mvn_sample(mu, Sigma, n, rng):
+    """Return n samples from N(mu, Sigma), shape (n, D):
+    mu + E @ L.T with E = rng.standard_normal((n, D)).
+    """
+
+    # Convert inputs to NumPy arrays.
+    mu = np.asarray(mu, dtype=float)
+    Sigma = np.asarray(Sigma, dtype=float)
+
+    # Get the dimensionality of the Gaussian distribution.
+    D = mu.shape[0]
+
+    # Compute the lower-triangular Cholesky factor:
+    # Sigma = L @ L.T
+    L = np.linalg.cholesky(Sigma)
+
+    # Draw all standard normal noise in a single call.
+    E = rng.standard_normal((n, D))
+
+    # Transform standard normal samples into samples
+    # from the multivariate Gaussian distribution.
+    samples = mu + E @ L.T
+
+    return samples
+

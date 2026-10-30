@@ -12,6 +12,7 @@ python scaffold.py
 
 - [x] **1.** mahalanobis_sq
 - [x] **2.** mvn_logpdf
+- [x] **3.** mvn_sample
 
 ---
 
